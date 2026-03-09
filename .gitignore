@@ -122,3 +122,5 @@ local.properties
 
 # sbteclipse plugin
 .target
+# Rust build artifacts
+jflap-rs/target/
