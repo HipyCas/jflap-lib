@@ -243,4 +243,73 @@ mod tests {
         assert!(!sim.accepts("aab"), "aab rejected");
         assert!(!sim.accepts("abb"), "abb rejected");
     }
+
+    /// PDA accepting {aⁿbⁿ | n ≥ 1} by **empty stack** acceptance.
+    ///
+    /// Push 'A' for each 'a', pop 'A' for each 'b'.  After the last 'b',
+    /// pop the bottom-of-stack 'Z' via a lambda transition, leaving the stack
+    /// empty.
+    fn build_anbn_empty_stack() -> Pda {
+        let mut pda = Pda::new();
+        let q0 = pda.add_state("q0");
+        let q1 = pda.add_state("q1");
+        pda.set_initial_state(q0);
+        // No final states — acceptance is by empty stack.
+
+        pda.add_transition(PdaTransition {
+            from: q0,
+            to: q0,
+            input_to_read: "a".into(),
+            string_to_pop: "Z".into(),
+            string_to_push: "AZ".into(),
+        });
+        pda.add_transition(PdaTransition {
+            from: q0,
+            to: q0,
+            input_to_read: "a".into(),
+            string_to_pop: "A".into(),
+            string_to_push: "AA".into(),
+        });
+        pda.add_transition(PdaTransition {
+            from: q0,
+            to: q1,
+            input_to_read: "b".into(),
+            string_to_pop: "A".into(),
+            string_to_push: "".into(),
+        });
+        pda.add_transition(PdaTransition {
+            from: q1,
+            to: q1,
+            input_to_read: "b".into(),
+            string_to_pop: "A".into(),
+            string_to_push: "".into(),
+        });
+        // Lambda: pop the bottom Z to empty the stack.
+        pda.add_transition(PdaTransition {
+            from: q1,
+            to: q1,
+            input_to_read: "".into(),
+            string_to_pop: "Z".into(),
+            string_to_push: "".into(),
+        });
+        pda
+    }
+
+    #[test]
+    fn anbn_empty_stack_accepts() {
+        let pda = build_anbn_empty_stack();
+        let sim = PdaSimulator::new(&pda, AcceptMode::EmptyStack);
+        assert!(sim.accepts("ab"), "ab accepted by empty stack");
+        assert!(sim.accepts("aabb"), "aabb accepted by empty stack");
+        assert!(sim.accepts("aaabbb"), "aaabbb accepted by empty stack");
+    }
+
+    #[test]
+    fn anbn_empty_stack_rejects() {
+        let pda = build_anbn_empty_stack();
+        let sim = PdaSimulator::new(&pda, AcceptMode::EmptyStack);
+        assert!(!sim.accepts(""), "empty string rejected");
+        assert!(!sim.accepts("a"), "a rejected");
+        assert!(!sim.accepts("aab"), "aab rejected");
+    }
 }

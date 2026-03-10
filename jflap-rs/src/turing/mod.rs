@@ -9,6 +9,7 @@ use std::str::FromStr;
 use crate::automaton::{Automaton, StateId};
 
 pub mod simulator;
+pub mod stepper;
 pub mod tape;
 
 /// The direction a TM tape head can move.

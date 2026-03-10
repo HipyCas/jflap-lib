@@ -115,3 +115,19 @@ impl Automaton {
         &self.final_states
     }
 }
+
+/// Outcome returned by step-by-step simulators.
+///
+/// Returned by the `step()` method of [`crate::fsa::stepper::FsaStepper`],
+/// [`crate::pda::stepper::PdaStepper`], and
+/// [`crate::turing::stepper::TmStepper`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StepOutcome {
+    /// The simulation is still running; call `step()` again for the next
+    /// configuration.
+    Active,
+    /// The input has been **accepted**.
+    Accepted,
+    /// The input has been **rejected** (no further configurations remain).
+    Rejected,
+}

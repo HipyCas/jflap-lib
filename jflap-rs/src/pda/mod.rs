@@ -9,6 +9,7 @@
 use crate::automaton::{Automaton, StateId};
 
 pub mod simulator;
+pub mod stepper;
 
 /// A single PDA transition.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

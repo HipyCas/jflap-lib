@@ -7,6 +7,7 @@
 use crate::automaton::{Automaton, StateId};
 
 pub mod simulator;
+pub mod stepper;
 
 /// A single FSA transition.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

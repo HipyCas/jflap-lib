@@ -6,5 +6,5 @@ description = "Rust port of JFLAP core automata engine (FSA, PDA, Turing Machine
 license = "MIT"
 
 [dependencies]
-quick-xml = { version = "0.37", features = ["serialize"] }
+quick-xml = "0.37"
 thiserror = "2"

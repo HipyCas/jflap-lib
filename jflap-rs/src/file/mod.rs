@@ -1,7 +1,8 @@
 //! File I/O for JFLAP `.jff` XML files.
 //!
-//! The [`load`] function reads a `.jff` file from a path or an in-memory
-//! string and returns a typed [`Automaton`] enum.
+//! Use [`load_file`] to read from disk, or [`load_str`] for an in-memory XML
+//! string.  Both return an [`AutomatonKind`] enum that wraps the parsed
+//! automaton.
 
 pub mod xml;
 

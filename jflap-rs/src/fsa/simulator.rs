@@ -71,7 +71,7 @@ impl<'a> FsaSimulator<'a> {
 /// - JFLAP-style character-class ranges such as `[a-z]`.
 ///
 /// Returns the number of bytes consumed on success, or `None` on failure.
-fn match_label(label: &str, bytes: &[u8], pos: usize) -> Option<usize> {
+pub(crate) fn match_label(label: &str, bytes: &[u8], pos: usize) -> Option<usize> {
     if label.starts_with('[') {
         // Character-class range [x-y] — consumes exactly one character.
         if pos >= bytes.len() {
