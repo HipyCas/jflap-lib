@@ -70,6 +70,7 @@ struct TmSnapshot {
 pub struct TmStepper<'a> {
     tm: &'a Tm,
     accept_mode: AcceptMode,
+    original_input: String,
     /// Full history of snapshots; `history[0]` = initial state.
     history: Vec<TmSnapshot>,
     done: bool,
@@ -96,6 +97,7 @@ impl<'a> TmStepper<'a> {
         TmStepper {
             tm,
             accept_mode,
+            original_input: input.to_owned(),
             history: vec![initial_snap],
             done,
             accepted,
@@ -252,22 +254,40 @@ impl<'a> TmStepper<'a> {
         StepOutcome::Rejected
     }
 
-    /// Resets the stepper to the initial configuration.
-    pub fn reset(&mut self, input: &str) {
-        *self = TmStepper::new(self.tm, input, self.accept_mode);
+    /// Resets the stepper to the original input used at construction time.
+    pub fn reset(&mut self) {
+        *self = TmStepper::new(self.tm, &self.original_input, self.accept_mode);
     }
 
     fn find_transition(&self, state: StateId, symbol: char) -> Option<&TmTransition> {
-        let mut wildcard: Option<&TmTransition> = None;
+        // Mirror `TmSimulator::find_transition` priority:
+        // 1) exact symbol
+        // 2) wildcard '~'
+        // 3) negation '!' fallback
+        let mut exact_or_wildcard: Option<&TmTransition> = None;
+        let mut negated: Option<&TmTransition> = None;
 
         for t in self.tm.transitions_from(state) {
-            if t.read == symbol {
-                return Some(t); // exact match wins immediately
-            } else if t.read == '~' && wildcard.is_none() {
-                wildcard = Some(t); // wildcard is the only valid fallback
+            if t.read == '~' {
+                if exact_or_wildcard.is_none() {
+                    exact_or_wildcard = Some(t);
+                }
+            } else if t.read == symbol {
+                exact_or_wildcard = Some(t);
+                break; // exact match wins immediately
             }
         }
-        wildcard
+
+        if exact_or_wildcard.is_none() {
+            for t in self.tm.transitions_from(state) {
+                if t.read == '!' {
+                    negated = Some(t);
+                    break;
+                }
+            }
+        }
+
+        exact_or_wildcard.or(negated)
     }
 }
 
@@ -415,5 +435,41 @@ mod tests {
         // After undo, back to q0 which is not final.
         assert_eq!(stepper.outcome(), StepOutcome::Active);
         assert!(!stepper.is_accepted());
+    }
+
+    #[test]
+    fn reset_reuses_original_input() {
+        let tm = build_replace_tm();
+        let mut stepper = TmStepper::new(&tm, "aa", AcceptMode::HaltInFinalState);
+        assert_eq!(stepper.step(), StepOutcome::Active);
+        assert_eq!(stepper.step(), StepOutcome::Active);
+        assert_eq!(stepper.configuration().tape.trim_matches(BLANK), "bb");
+
+        stepper.reset();
+        assert_eq!(stepper.current_step(), 0);
+        assert_eq!(stepper.configuration().tape.trim_matches(BLANK), "aa");
+        assert_eq!(stepper.outcome(), StepOutcome::Active);
+    }
+
+    #[test]
+    fn negation_fallback_matches_batch_simulator() {
+        // q0 has only a negation fallback ('!') transition to final q1.
+        let mut tm = Tm::new();
+        let q0 = tm.add_state("q0");
+        let q1 = tm.add_state("q1");
+        tm.set_initial_state(q0);
+        tm.add_final_state(q1);
+        tm.add_transition(TmTransition {
+            from: q0,
+            to: q1,
+            read: '!',
+            write: 'X',
+            direction: Direction::Stay,
+        });
+
+        let mut stepper = TmStepper::new(&tm, "a", AcceptMode::HaltInFinalState);
+        assert_eq!(stepper.step(), StepOutcome::Active);
+        // Next step halts in final state.
+        assert_eq!(stepper.step(), StepOutcome::Accepted);
     }
 }
