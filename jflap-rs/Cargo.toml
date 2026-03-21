@@ -1,0 +1,10 @@
+[package]
+name = "jflap-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust port of JFLAP core automata engine (FSA, PDA, Turing Machines)"
+license = "MIT"
+
+[dependencies]
+quick-xml = "0.37"
+thiserror = "2"
